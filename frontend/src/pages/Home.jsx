@@ -11,7 +11,7 @@ const Home = () => {
   return (
     <div className='w-full h-screen'>
 
-      <div className={`backdrop-blur-xl overflow-hidden h-[100%] grid
+      <div className={`backdrop-blur-xl overflow-hidden h-[100%] min-h-0 grid
        grid-cols-1 relative ${selectedUser ? 'md:grid-cols-[1fr_1.5fr_1fr] xl:grid-cols-[1fr_2fr_1fr]'
           : 'md:grid-cols-2'}`}>
 
