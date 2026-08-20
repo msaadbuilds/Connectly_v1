@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import assets from '../assets/assets'
 import { ChatContext } from '../../context/Chatcontext'
 import { AuthContext } from '../../context/Authcontext'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const RightSidebar = () => {
   const { selectedUser, messages } = useContext(ChatContext)
@@ -25,45 +26,66 @@ const RightSidebar = () => {
     )
   }, [messages])
 
-  return selectedUser && (
-    <div className={`bg-[#8185B2]/12 backdrop-blur-xl border-l border-white/5 text-white w-full relative overflow-y-scroll ${selectedUser ?
-      "max-md:hidden" : ""}`}>
-      <div className='pt-16 flex flex-col items-center gap-2 text-xs font-light mx-auto'>
-        <img src={selectedUser?.profilePic || assets.avatar_icon} className='w-25 h-25 aspect-square rounded-full
-         object-cover ring-4 ring-white/10' />
-        <h1 className='px-10 text-2xl font-bold mx-auto flex items-center gap-2'>
-          {onlineUsers.includes(selectedUser._id) && <p className='w-2 h-2 rounded-full bg-emerald-400'></p>}
-          {selectedUser.fullName}
-        </h1>
-        <p className='px-10 mx-auto text-sm text-gray-400'>{selectedUser.bio}</p>
-      </div>
+  return (
+    <AnimatePresence>
+      {selectedUser && (
+        <motion.div
+          key={selectedUser._id}
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 24 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className={`bg-[#8185B2]/8 border-l border-white/5 text-white w-full relative overflow-y-scroll overflow-x-hidden ${selectedUser ?
+            "max-md:hidden" : ""}`}
+        >
+          {/* ambient glow to match the animated theme instead of feeling empty */}
+          <motion.div
+            className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-fuchsia-600/20 blur-3xl pointer-events-none"
+            animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          />
+          <motion.div
+            className="absolute bottom-24 -right-16 w-56 h-56 rounded-full bg-violet-600/20 blur-3xl pointer-events-none"
+            animate={{ scale: [1, 1.1, 1], opacity: [0.35, 0.6, 0.35] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+          />
 
-      <hr className='border-white/10 my-4' />
-
-      <div className='px-5'>
-        <div className='flex items-center gap-4 mb-3'>
-          <p className='text-md'>Media</p>
-          <div className='flex bg-white/5 border border-white/10 rounded-full p-1'>
-            <button 
-              onClick={() => setMediaType('images')}
-              className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                mediaType === 'images' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Images ({msgImages.length})
-            </button>
-            <button 
-              onClick={() => setMediaType('videos')}
-              className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                mediaType === 'videos' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Videos ({msgVideos.length})
-            </button>
+          <div className='relative pt-16 flex flex-col items-center gap-2 text-xs font-light mx-auto'>
+            <img src={selectedUser?.profilePic || assets.avatar_icon} className='w-25 h-25 aspect-square rounded-full
+             object-cover ring-4 ring-white/10' />
+            <h1 className='px-10 text-2xl font-bold mx-auto flex items-center gap-2'>
+              {onlineUsers.includes(selectedUser._id) && <p className='w-2 h-2 rounded-full bg-emerald-400'></p>}
+              {selectedUser.fullName}
+            </h1>
+            <p className='px-10 mx-auto text-sm text-gray-400'>{selectedUser.bio}</p>
           </div>
-        </div>
 
-        <div className='mt-2 max-h-100 w-full overflow-y-scroll grid grid-cols-2 gap-4 opacity-80'>
+          <hr className='relative border-white/10 my-4' />
+
+          <div className='relative px-5'>
+            <div className='flex items-center gap-4 mb-3'>
+              <p className='text-md'>Media</p>
+              <div className='flex bg-white/5 border border-white/10 rounded-full p-1'>
+                <button 
+                  onClick={() => setMediaType('images')}
+                  className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                    mediaType === 'images' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  Images ({msgImages.length})
+                </button>
+                <button 
+                  onClick={() => setMediaType('videos')}
+                  className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                    mediaType === 'videos' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  Videos ({msgVideos.length})
+                </button>
+              </div>
+            </div>
+
+        <div className='relative mt-2 max-h-100 w-full overflow-y-scroll grid grid-cols-2 gap-4 opacity-80'>
           {mediaType === 'images' && msgImages.map((url, index) => (
             <div key={index} onClick={() => window.open(url)}
               className='cursor-pointer rounded-lg overflow-hidden ring-1 ring-white/10 hover:ring-violet-400/40 transition'>
@@ -116,7 +138,9 @@ const RightSidebar = () => {
         rounded-full cursor-pointer hover:brightness-110 active:scale-[0.99] transition shadow-lg shadow-violet-900/30'>
         Logout
       </button>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 

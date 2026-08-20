@@ -7,13 +7,15 @@ import Verify from "./pages/Verify"
 import Login from "./pages/Login"
 import Profile from "./pages/Profile"
 import { AuthContext } from '../context/Authcontext'
+import AnimatedBackground from './components/AnimatedBackground'
 
 
 function App() {
   const { authUser} = useContext(AuthContext)
 
   return (
-    <div className="bg-[url('/bgImage.svg')] bg-contain">
+    <div>
+      <AnimatedBackground />
       <Toaster />
 
       <Routes>

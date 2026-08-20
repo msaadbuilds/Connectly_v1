@@ -20,7 +20,7 @@ const Login = () => {
 
   return (
     <div className='min-h-screen bg-cover bg-center flex items-center justify-center gap-10 sm:justify-evenly
-    max-sm:flex-col backdrop-blur-2xl p-4'>
+    max-sm:flex-col backdrop-blur-xl p-4'>
 
       <Logo size="xl" stacked withTagline />
 
