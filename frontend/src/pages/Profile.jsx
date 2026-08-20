@@ -29,34 +29,34 @@ const Profile = () => {
     }
   }
   return (
-    <div className='min-h-screen bg-cover bg-no-repeat flex items-center justify-center backdrop-blur-md'>
-      <div className='w-5/6 max-w-2xl backdrop-blur-2xl text-gray-300 border-2 border-gray-600 flex items-center
-       justify-center max-sm:flex-col-reverse rounded-lg' >
+    <div className='min-h-screen bg-cover bg-no-repeat flex items-center justify-center backdrop-blur-md p-4'>
+      <div className='w-5/6 max-w-2xl backdrop-blur-2xl bg-white/5 text-gray-300 border border-white/10 flex items-center
+       justify-center max-sm:flex-col-reverse rounded-2xl shadow-2xl shadow-black/30' >
         <form onSubmit={handleSubmit} className='flex flex-col gap-5 p-10 flex-1'>
-          <h3 className='text-lg'>
+          <h3 className='text-lg font-medium text-white'>
             Profile Details
           </h3>
-          <label htmlFor="avatar" className='flex items-center gap-3 cursor-pointer'>
+          <label htmlFor="avatar" className='flex items-center gap-3 cursor-pointer group'>
             <input onChange={(e) => setSelectedImg(e.target.files[0])} type="file" id='avatar' accept='image/*' hidden />
-            <img src={selectedImg ? URL.createObjectURL(selectedImg) : (authUser?.profilePic || assets.avatar_icon)} className='w-12 h-12 rounded-full object-cover object-center' />
-            {authUser?.profilePic ? 'Update Profile Image' : 'Upload Profile Image'}
+            <img src={selectedImg ? URL.createObjectURL(selectedImg) : (authUser?.profilePic || assets.avatar_icon)} className='w-12 h-12 rounded-full object-cover object-center ring-2 ring-white/10 group-hover:ring-violet-400/50 transition' />
+            <span className='group-hover:text-white transition-colors'>{authUser?.profilePic ? 'Update Profile Image' : 'Upload Profile Image'}</span>
           </label>
           <input type="text" onChange={(e) => setName(e.target.value)} value={name} required placeholder='Your name'
-            className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500' />
+            className='p-2.5 bg-white/8 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition' />
 
           <textarea onChange={(e) => setBio(e.target.value)} value={bio} placeholder='Write Profile bio...'
-            className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500'
+            className='p-2.5 bg-white/8 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition'
             rows="4">
           </textarea>
 
-          <button type='submit' className='bg-gradient-to-r from-purple-400 to-violet-600 text-white p-2 rounded-full text-lg
-          cursor-pointer'>
+          <button type='submit' className='bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 text-white p-2.5 rounded-full text-lg
+          cursor-pointer hover:brightness-110 active:scale-[0.99] transition shadow-lg shadow-violet-900/30'>
             Save
           </button>
         </form>
         <img
           src={authUser?.profilePic || (selectedImg && URL.createObjectURL(selectedImg))}
-          className={`max-w-44 aspect-square object-cover rounded-full mx-10 max-sm:mt-10 ${selectedImg ? 'rounded-full' : ''}`}
+          className={`max-w-44 aspect-square object-cover rounded-full mx-10 max-sm:mt-10 ring-4 ring-white/10 ${selectedImg ? 'rounded-full' : ''}`}
         />
 
       </div>

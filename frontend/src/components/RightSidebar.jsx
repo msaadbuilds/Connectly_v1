@@ -26,28 +26,28 @@ const RightSidebar = () => {
   }, [messages])
 
   return selectedUser && (
-    <div className={`bg-[#8185B2]/16 text-white w-full relative overflow-y-scroll ${selectedUser ?
+    <div className={`bg-[#8185B2]/12 backdrop-blur-xl border-l border-white/5 text-white w-full relative overflow-y-scroll ${selectedUser ?
       "max-md:hidden" : ""}`}>
       <div className='pt-16 flex flex-col items-center gap-2 text-xs font-light mx-auto'>
         <img src={selectedUser?.profilePic || assets.avatar_icon} className='w-25 h-25 aspect-square rounded-full
-         object-cover' />
+         object-cover ring-4 ring-white/10' />
         <h1 className='px-10 text-2xl font-bold mx-auto flex items-center gap-2'>
-          {onlineUsers.includes(selectedUser._id) && <p className='w-2 h-2 rounded-full bg-green-500'></p>}
+          {onlineUsers.includes(selectedUser._id) && <p className='w-2 h-2 rounded-full bg-emerald-400'></p>}
           {selectedUser.fullName}
         </h1>
-        <p className='px-10 mx-auto text-sm'>{selectedUser.bio}</p>
+        <p className='px-10 mx-auto text-sm text-gray-400'>{selectedUser.bio}</p>
       </div>
 
-      <hr className='border-[#ffffff50] my-4' />
+      <hr className='border-white/10 my-4' />
 
       <div className='px-5'>
         <div className='flex items-center gap-4 mb-3'>
           <p className='text-md'>Media</p>
-          <div className='flex bg-gray-700/50 rounded-full p-1'>
+          <div className='flex bg-white/5 border border-white/10 rounded-full p-1'>
             <button 
               onClick={() => setMediaType('images')}
               className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                mediaType === 'images' ? 'bg-violet-600 text-white' : 'text-gray-300 hover:text-white'
+                mediaType === 'images' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' : 'text-gray-300 hover:text-white'
               }`}
             >
               Images ({msgImages.length})
@@ -55,7 +55,7 @@ const RightSidebar = () => {
             <button 
               onClick={() => setMediaType('videos')}
               className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                mediaType === 'videos' ? 'bg-violet-600 text-white' : 'text-gray-300 hover:text-white'
+                mediaType === 'videos' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' : 'text-gray-300 hover:text-white'
               }`}
             >
               Videos ({msgVideos.length})
@@ -66,15 +66,15 @@ const RightSidebar = () => {
         <div className='mt-2 max-h-100 w-full overflow-y-scroll grid grid-cols-2 gap-4 opacity-80'>
           {mediaType === 'images' && msgImages.map((url, index) => (
             <div key={index} onClick={() => window.open(url)}
-              className='cursor-pointer rounded'>
-              <img src={url} className='h-30 w-full object-cover rounded-md' alt={`Image ${index + 1}`} />
+              className='cursor-pointer rounded-lg overflow-hidden ring-1 ring-white/10 hover:ring-violet-400/40 transition'>
+              <img src={url} className='h-30 w-full object-cover' alt={`Image ${index + 1}`} />
             </div>
           ))}
           
           {mediaType === 'videos' && msgVideos.map((videoData, index) => (
-            <div key={index} className='cursor-pointer rounded relative group'>
+            <div key={index} className='cursor-pointer rounded-lg overflow-hidden relative group ring-1 ring-white/10 hover:ring-violet-400/40 transition'>
               <video 
-                className='h-30 w-full object-cover rounded-md' 
+                className='h-30 w-full object-cover' 
                 preload="metadata"
                 onClick={() => window.open(videoData.url)}
               >
@@ -111,9 +111,9 @@ const RightSidebar = () => {
         )}
       </div>
 
-      <button onClick={() => logout()} className='absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-linear-to-r
-       from-purple-400 to-violet-600 text-white border-none text-lg font-normal py-2 px-25
-        rounded-full cursor-pointer'>
+      <button onClick={() => logout()} className='absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r
+       from-indigo-500 via-violet-500 to-fuchsia-500 text-white border-none text-lg font-normal py-2 px-25
+        rounded-full cursor-pointer hover:brightness-110 active:scale-[0.99] transition shadow-lg shadow-violet-900/30'>
         Logout
       </button>
     </div>

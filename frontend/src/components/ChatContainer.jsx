@@ -5,6 +5,7 @@ import { ChatContext } from '../../context/Chatcontext'
 import { AuthContext } from '../../context/Authcontext'
 import imageCompression from "browser-image-compression";
 import toast from "react-hot-toast";
+import { LogoMark } from './Logo'
 
 const ChatContainer = () => {
   const { messages, selectedUser, setSelectedUser, sendMessage, sendVideoMessage, sendImageMessage, getMessages, isUploading } = useContext(ChatContext)
@@ -90,7 +91,7 @@ const ChatContainer = () => {
   const renderMessage = (msg) => {
     if (msg.messageType === 'video' || msg.video) {
       return (
-        <div className="sm:w-85 w-55 rounded-lg overflow-hidden mb-8 border border-gray-700">
+        <div className="sm:w-85 w-55 rounded-2xl overflow-hidden mb-8 border border-white/10 shadow-md shadow-black/20">
           <video
             controls
             className="w-full h-auto max-h-60 object-cover"
@@ -107,15 +108,18 @@ const ChatContainer = () => {
         <img
           src={msg.image}
           onClick={() => window.open(msg.image)}
-          className="sm:w-70 h-87.5 w-55 border cursor-pointer object-cover border-gray-700 rounded-lg overflow-hidden mb-8"
+          className="sm:w-70 h-87.5 w-55 border cursor-pointer object-cover border-white/10 rounded-2xl overflow-hidden mb-8 shadow-md shadow-black/20"
           alt="Shared image"
         />
       );
     } else {
+      const isMine = msg.senderId === authUser._id
       return (
         <div>
-          <p className={`p-2 max-w-50 md:text-sm font-light rounded-lg mb-8 break-all bg-violet-600 text-white
-            ${msg.senderId === authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+          <p className={`px-3.5 py-2 max-w-50 md:text-sm font-light rounded-2xl mb-8 break-all shadow-md
+            ${isMine
+              ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white rounded-br-md shadow-violet-900/30'
+              : 'bg-white/10 border border-white/10 backdrop-blur-sm text-white rounded-bl-md shadow-black/20'}`}>
             {msg.text}
           </p>
         </div>
@@ -126,14 +130,18 @@ const ChatContainer = () => {
   return selectedUser ? (
     <div className="h-full overflow-scroll relative py-1">
 
-      <div className="flex items-center gap-3 py-3 mx-3 border-b border-gray-500">
-        <img src={selectedUser.profilePic || assets.avatar_icon} alt="" className="w-8 h-8 object-cover rounded-full" />
+      <div className="flex items-center gap-3 py-3 mx-3 border-b border-white/10">
+        <div className="relative shrink-0">
+          <img src={selectedUser.profilePic || assets.avatar_icon} alt="" className="w-9 h-9 object-cover rounded-full ring-2 ring-white/10" />
+          {onlineUsers.includes(selectedUser._id) && (
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-[#15122a]"></span>
+          )}
+        </div>
         <p className="flex-1 text-lg text-white flex items-center gap-2">
           {selectedUser.fullName}
-          {onlineUsers.includes(selectedUser._id) && <span className="w-2 h-2 rounded-full bg-green-500"></span>}
         </p>
-        <img src={assets.arrow_icon} onClick={() => setSelectedUser(null)} className="md:hidden max-w-7 cursor-pointer" />
-        <img src={assets.help_icon} className="max-md:hidden max-w-5" alt="" />
+        <img src={assets.arrow_icon} onClick={() => setSelectedUser(null)} className="md:hidden max-w-7 cursor-pointer opacity-80 hover:opacity-100 transition-opacity" />
+        <img src={assets.help_icon} className="max-md:hidden max-w-5 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" alt="" />
       </div>
 
       <div className="flex flex-col h-[calc(100%-110px)] overflow-y-scroll pt-3 pb-3 relative">
@@ -151,7 +159,7 @@ const ChatContainer = () => {
 
         {isUploading && (
           <div className="absolute top-5 left-1/2 transform -translate-x-1/2 z-50">
-            <div className="flex items-center gap-2 bg-violet-600 px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 rounded-full shadow-lg shadow-violet-900/40">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
               <span className="text-white text-md">Sending...</span>
             </div>
@@ -183,12 +191,12 @@ const ChatContainer = () => {
       </div>
 
       <div className="px-2 absolute right-0 left-0">
-        <div className="flex items-center rounded-full px-1 py-1 bg-violet-500/20 shadow-lg w-full border border-gray-700">
+        <div className="flex items-center rounded-full px-1.5 py-1.5 bg-white/8 backdrop-blur-md shadow-lg w-full border border-white/10 focus-within:border-violet-400/50 transition-colors">
 
           <div className="relative shrink-0">
             <button
               onClick={() => setShowUpload(prev => !prev)}
-              className="text-white cursor-pointer p-2 hover:bg-gray-700 rounded-full"
+              className="text-white cursor-pointer p-2 hover:bg-white/10 rounded-full transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -197,10 +205,10 @@ const ChatContainer = () => {
             {showUpload && (
               <div
                 ref={dropdownRef}
-                className="absolute bottom-12 left-0 flex gap-2 bg-gray-700/90 px-3 py-2 rounded-xl shadow-lg"
+                className="absolute bottom-13 left-0 flex gap-2 bg-[#241f3d]/95 backdrop-blur-xl px-3 py-2 rounded-2xl shadow-2xl shadow-black/40 border border-white/10"
               >
                 {/* Image Upload */}
-                <label htmlFor="image" className="p-2 rounded-full hover:bg-gray-700 cursor-pointer">
+                <label htmlFor="image" className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                     <path d="M15 8a1 1 0 100-2 1 1 0 000 2z" />
@@ -209,7 +217,7 @@ const ChatContainer = () => {
                 <input onChange={handleSendImage} type="file" id="image" accept="image/*" hidden disabled={isUploading} />
 
                 {/* Video Upload */}
-                <label htmlFor="video" className="p-2 rounded-full hover:bg-gray-700 cursor-pointer">
+                <label htmlFor="video" className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
@@ -233,7 +241,8 @@ const ChatContainer = () => {
           {/* Send Button */}
           <button
             onClick={isUploading ? undefined : handleSendMessage}
-            className="shrink-0 w-9 h-9 ml-1"
+            className="shrink-0 w-9 h-9 ml-1 transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+            disabled={isUploading}
           >
             <img
               src={assets.send_button}
@@ -248,9 +257,12 @@ const ChatContainer = () => {
 
     </div>
   ) : (
-    <div className="flex flex-col items-center justify-center gap-2 text-gray-500 bg-white/10 rounded-lg max-md:hidden">
-      <img src={assets.logo_icon} className="max-w-24" />
-      <p className="text-xl font-normal text-white">Chat Anytime, Anywhere</p>
+    <div className="flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/5 rounded-2xl max-md:hidden">
+      <LogoMark size={88} />
+      <div className="text-center">
+        <p className="text-xl font-medium text-white">Chat Anytime, Anywhere</p>
+        <p className="text-sm text-gray-400 mt-1">Select a conversation to start messaging</p>
+      </div>
     </div>
   )
 }

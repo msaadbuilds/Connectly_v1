@@ -1,8 +1,8 @@
 import React, { useContext, useRef, useState } from 'react';
-import assets from '../assets/assets';
 import { AuthContext } from '../../context/Authcontext';
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
+import Logo from '../components/Logo';
 
 const Verify = () => {
   const [code, setCode] = useState(["", "", "", ""]);
@@ -51,13 +51,13 @@ const Verify = () => {
   };
 
   return (
-    <div className='min-h-screen bg-cover bg-center flex items-center justify-center gap-8 sm:justify-evenly
+    <div className='min-h-screen bg-cover bg-center flex items-center justify-center gap-10 sm:justify-evenly
         max-sm:flex-col backdrop-blur-2xl p-4'>
 
-      <img src={assets.logo_big} className='w-[min(50vw,280px)]' alt="" />
+      <Logo size="xl" stacked withTagline />
 
-      <form onSubmit={onSubmitHandler} className="border border-gray-600 bg-gradient-to-r from-purple-400/17 to-violet-700/17
-            text-white p-5 flex flex-col rounded-lg shadow-lg space-y-5 w-full max-w-sm sm:max-w-md" >
+      <form onSubmit={onSubmitHandler} className="border border-white/10 bg-white/5 backdrop-blur-xl
+            text-white p-6 flex flex-col rounded-2xl shadow-2xl shadow-black/30 space-y-5 w-full max-w-sm sm:max-w-md" >
 
         <div className="w-full h-full">
           <h2 className="text-2xl sm:text-4xl font-bold mb-2 text-center sm:text-left">Email Verification</h2>
@@ -86,7 +86,7 @@ const Verify = () => {
                   onPaste={handlePaste}
                   ref={(el) => (inputRefs.current[index] = el)}
                   className="w-14 h-12 sm:w-16 sm:h-12 font-semibold text-lg sm:text-2xl text-center
-                  bg-white/12 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  bg-white/8 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
                 />
               ))}
             </div>
@@ -94,7 +94,7 @@ const Verify = () => {
 
           <button
             type="submit"
-            className="cursor-pointer py-2.5 bg-gradient-to-r w-full from-purple-400 to-violet-600 text-white rounded-md text-lg font-medium mt-2"
+            className="cursor-pointer py-2.5 bg-gradient-to-r w-full from-indigo-500 via-violet-500 to-fuchsia-500 text-white rounded-xl text-lg font-medium mt-2 hover:brightness-110 active:scale-[0.99] transition shadow-lg shadow-violet-900/30"
           >
             Verify My Account
           </button>
