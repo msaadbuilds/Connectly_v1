@@ -14,12 +14,24 @@ export const AuthProvider = ({ children }) => {
     const [authUser, setAuthUser] = useState(null)
     const [onlineUsers, setOnlineUsers] = useState([])
     const [socket, setSocket] = useState(null)
+    // Only worth showing a "checking..." state if we actually have a token
+    // to verify - a fresh visitor with no token should see Login instantly.
+    const [isCheckingAuth, setIsCheckingAuth] = useState(!!localStorage.getItem("token"))
 
     const checkAuth = async () => {
-        const { data } = await axios.get('/api/auth/check');
-        if (data.success) {
-            setAuthUser(data.user)
-            connectSocket(data.user)
+        try {
+            const { data } = await axios.get('/api/auth/check');
+            if (data.success) {
+                setAuthUser(data.user)
+                connectSocket(data.user)
+            }
+        } catch (error) {
+            // Invalid/expired token - clear it so we fall back to Login cleanly.
+            localStorage.removeItem("token");
+            setToken(null);
+            axios.defaults.headers.common["token"] = null;
+        } finally {
+            setIsCheckingAuth(false)
         }
     }
 
@@ -109,8 +121,10 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         if (token) {
             axios.defaults.headers.common["token"] = token;
+            checkAuth()
+        } else {
+            setIsCheckingAuth(false)
         }
-        checkAuth()
     }, [])
 
     const value = {
@@ -118,6 +132,7 @@ export const AuthProvider = ({ children }) => {
         authUser,
         onlineUsers,
         socket,
+        isCheckingAuth,
         verifyOTP,
         sendOTP,
         login,
