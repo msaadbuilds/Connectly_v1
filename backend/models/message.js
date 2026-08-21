@@ -26,6 +26,10 @@ const messageSchema = new mongoose.Schema(
         enum: ['text', 'image', 'video'],
         default: 'text'
     },
+    delivered: {
+        type: Boolean,
+        default: false
+    },
     seen: {
         type: Boolean,
         default: false

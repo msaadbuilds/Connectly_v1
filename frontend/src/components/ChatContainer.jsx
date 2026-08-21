@@ -8,14 +8,66 @@ import toast from "react-hot-toast";
 import { LogoMark } from './Logo'
 import { motion, AnimatePresence } from 'framer-motion'
 
+// --- WhatsApp-style status icons (clock while sending, single/double tick, blue when seen) ---
+const ClockIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 16 16" className={className} fill="none">
+    <circle cx="8" cy="8" r="6.3" stroke="currentColor" strokeWidth="1.3" />
+    <path d="M8 4.6V8.2L10.3 9.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+const SingleTick = ({ className = '' }) => (
+  <svg viewBox="0 0 16 12" className={className} fill="none">
+    <path d="M1.5 6.3L5.2 10L14.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+const DoubleTick = ({ className = '' }) => (
+  <svg viewBox="0 0 20 12" className={className} fill="none">
+    <path d="M0.5 6.3L4.2 10L13.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M6 6.3L9.7 10L19 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+const MessageStatus = ({ msg, light = false }) => {
+  const baseClass = light ? 'text-white/80' : 'text-white/70'
+  if (msg.pending) return <ClockIcon className={`w-3 h-3 shrink-0 ${baseClass}`} />
+  if (msg.seen) return <DoubleTick className="w-3.5 h-3 shrink-0 text-[#53BDEB]" />
+  if (msg.delivered) return <DoubleTick className={`w-3.5 h-3 shrink-0 ${baseClass}`} />
+  return <SingleTick className={`w-3 h-3 shrink-0 ${baseClass}`} />
+}
+
+const DownloadIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" />
+  </svg>
+)
+
 const ChatContainer = () => {
-  const { messages, selectedUser, setSelectedUser, sendMessage, sendVideoMessage, sendImageMessage, getMessages, isUploading } = useContext(ChatContext)
+  const { messages, selectedUser, setSelectedUser, sendMessage, sendVideoMessage, sendImageMessage, getMessages, isUploading, showUserInfo, setShowUserInfo } = useContext(ChatContext)
   const { authUser, onlineUsers } = useContext(AuthContext)
 
-  const scrollEnd = useRef()
+  const messagesContainerRef = useRef()
   const dropdownRef = useRef();
   const [showUpload, setShowUpload] = useState(false);
   const [input, setInput] = useState('')
+
+  const handleDownload = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      toast.error('Download failed');
+    }
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -70,8 +122,12 @@ const ChatContainer = () => {
   }, [selectedUser])
 
   useEffect(() => {
-    if (scrollEnd.current && messages) {
-      scrollEnd.current.scrollIntoView({ behavior: "smooth" })
+    // Scroll only the message list itself, not scrollIntoView() - which can
+    // walk up and nudge outer overflow-hidden ancestors on some browsers,
+    // causing the whole chat pane to visibly jump with no way to scroll it back.
+    const container = messagesContainerRef.current
+    if (container && messages) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
     }
   }, [messages])
 
@@ -90,39 +146,80 @@ const ChatContainer = () => {
   }, []);
 
   const renderMessage = (msg) => {
+    const isMine = msg.senderId === authUser._id
+    const time = formatMessageTime(msg.createdAt)
+
     if (msg.messageType === 'video' || msg.video) {
       return (
-        <div className="sm:w-85 w-55 rounded-2xl overflow-hidden mb-8 border border-white/10 shadow-md shadow-black/20">
+        <div className="sm:w-85 w-55 rounded-2xl overflow-hidden border border-white/10 shadow-md shadow-black/20 relative bg-black/40">
           <video
             controls
-            className="w-full h-auto max-h-60 object-cover"
+            className="w-full h-auto max-h-60 object-cover block"
             preload="metadata"
           >
             <source src={msg.video} type="video/mp4" />
             <source src={msg.video} type="video/webm" />
             <source src={msg.video} type="video/ogg" />
           </video>
+          {/* bottom gradient so time/ticks stay legible over any video frame */}
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+          <button
+            onClick={() => handleDownload(msg.video, `video-${msg._id || Date.now()}.mp4`)}
+            className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm transition-colors"
+            title="Download video"
+          >
+            <DownloadIcon className="w-3.5 h-3.5 text-white" />
+          </button>
+          <div className="absolute bottom-1.5 right-2.5 flex items-center gap-1 text-[11px] text-white/90">
+            <span>{time}</span>
+            {isMine && <MessageStatus msg={msg} light />}
+          </div>
         </div>
       );
     } else if (msg.messageType === 'image' || msg.image) {
       return (
-        <img
-          src={msg.image}
-          onClick={() => window.open(msg.image)}
-          className="sm:w-70 h-87.5 w-55 border cursor-pointer object-cover border-white/10 rounded-2xl overflow-hidden mb-8 shadow-md shadow-black/20"
-          alt="Shared image"
-        />
+        <div className="sm:w-70 w-55 rounded-2xl overflow-hidden border border-white/10 shadow-md shadow-black/20 relative bg-black/20">
+          <img
+            src={msg.image}
+            onClick={() => window.open(msg.image)}
+            className="w-full h-87.5 cursor-pointer object-cover block"
+            alt="Shared image"
+          />
+          {/* bottom gradient so time/ticks stay legible over any image */}
+          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+          <button
+            onClick={() => handleDownload(msg.image, `image-${msg._id || Date.now()}.jpg`)}
+            className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm transition-colors"
+            title="Download image"
+          >
+            <DownloadIcon className="w-3.5 h-3.5 text-white" />
+          </button>
+          <div className="absolute bottom-1.5 right-2.5 flex items-center gap-1 text-[11px] text-white/90">
+            <span>{time}</span>
+            {isMine && <MessageStatus msg={msg} light />}
+          </div>
+        </div>
       );
     } else {
-      const isMine = msg.senderId === authUser._id
       return (
-        <div>
-          <p className={`px-3.5 py-2 max-w-50 md:text-sm font-light rounded-2xl mb-8 break-all shadow-md
+        <div className={`relative max-w-[75vw] sm:max-w-70 md:max-w-xs px-3 py-2 rounded-2xl shadow-md
             ${isMine
-              ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white rounded-br-md shadow-violet-900/30'
-              : 'bg-white/10 border border-white/10 backdrop-blur-sm text-white rounded-bl-md shadow-black/20'}`}>
+            ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white rounded-br-md shadow-violet-900/30'
+            : 'bg-white/10 border border-white/10 backdrop-blur-sm text-white rounded-bl-md shadow-black/20'}`}>
+          <p className="md:text-sm font-light whitespace-pre-wrap [overflow-wrap:anywhere] leading-relaxed">
             {msg.text}
+            {/* invisible spacer, exact same size as the real time/ticks below,
+                so the last line of text always wraps around it correctly -
+                works for single-line AND multi-line messages, just like WhatsApp */}
+            <span className="invisible inline-flex items-center gap-1 text-[10.5px] ml-2 align-bottom select-none">
+              <span>{time}</span>
+              {isMine && <MessageStatus msg={msg} />}
+            </span>
           </p>
+          <span className="pointer-events-none absolute bottom-1.5 right-3 flex items-center gap-1 text-[10.5px] text-white/70">
+            <span>{time}</span>
+            {isMine && <MessageStatus msg={msg} />}
+          </span>
         </div>
       );
     }
@@ -137,7 +234,7 @@ const ChatContainer = () => {
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="h-full min-h-0 overflow-hidden relative flex flex-col"
+          className="h-full overflow-hidden relative flex flex-col"
         >
 
           <div className="flex items-center gap-3 py-3 mx-3 border-b border-white/10 shrink-0">
@@ -151,7 +248,13 @@ const ChatContainer = () => {
               {selectedUser.fullName}
             </p>
             <img src={assets.arrow_icon} onClick={() => setSelectedUser(null)} className="md:hidden max-w-7 cursor-pointer opacity-80 hover:opacity-100 transition-opacity" />
-            <img src={assets.help_icon} className="max-md:hidden max-w-5 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" alt="" />
+            <button
+              onClick={() => setShowUserInfo(prev => !prev)}
+              className={`max-md:hidden h-8 w-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${showUserInfo ? 'bg-white/15' : 'hover:bg-white/10'}`}
+              title="Contact info"
+            >
+              <img src={assets.help_icon} className="max-w-5 opacity-80" alt="" />
+            </button>
           </div>
 
           {/* Everything below the header shares one continuous watermark + ambient glow background */}
@@ -190,30 +293,26 @@ const ChatContainer = () => {
             )}
 
             {/* scrollable messages - bottom padding keeps last messages clear of the floating input bar */}
-            <div className="relative h-full overflow-y-scroll px-3 pt-3 pb-24">
+            <div ref={messagesContainerRef} className="relative h-full overflow-y-scroll px-3 pt-3 pb-24">
               {messages.map((msg, index) => (
                 <motion.div
-                  key={index}
+                  key={msg._id || index}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25, ease: 'easeOut' }}
-                  className={`flex items-end gap-2 justify-end ${msg.senderId !== authUser._id && 'flex-row-reverse'}`}
+                  className={`flex items-end gap-2 mb-3 justify-end ${msg.senderId !== authUser._id && 'flex-row-reverse'}`}
                 >
                   {renderMessage(msg)}
-                  <div className="text-center text-xs">
-                    <img
-                      src={
-                        msg.senderId === authUser._id
-                          ? authUser?.profilePic || assets.avatar_icon
-                          : selectedUser?.profilePic || assets.avatar_icon
-                      }
-                      className="w-7 h-7 object-cover rounded-full"
-                    />
-                    <p className="text-gray-300 mt-1">{formatMessageTime(msg.createdAt)}</p>
-                  </div>
+                  <img
+                    src={
+                      msg.senderId === authUser._id
+                        ? authUser?.profilePic || assets.avatar_icon
+                        : selectedUser?.profilePic || assets.avatar_icon
+                    }
+                    className="w-7 h-7 object-cover rounded-full shrink-0 mb-0.5"
+                  />
                 </motion.div>
               ))}
-              <div ref={scrollEnd}></div>
             </div>
 
             {/* input bar - sits over the same watermark layer, lifted with bottom padding so it doesn't hug the edge */}

@@ -63,7 +63,7 @@ const Sidebar = () => {
       </div>
 
 
-      <div className='flex flex-col gap-0.5 overflow-y-auto max-h-[calc(100vh-180px)]'>
+      <div className='flex flex-col gap-1 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-180px)] px-2'>
         {filteredUsers.map((user, index) => (
           <motion.div
             onClick={() => { setSelectedUser(user); setUnseenMessages(prev => ({ ...prev, [user._id]: 0 })) }}
@@ -71,10 +71,10 @@ const Sidebar = () => {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: index * 0.04, ease: 'easeOut' }}
-            whileHover={{ x: 2 }}
+            whileTap={{ scale: 0.98 }}
             className={`relative flex items-center gap-3
-           p-2.5 sm:ml-2 rounded-xl cursor-pointer max-sm:text-sm transition-colors ${selectedUser?._id === user._id
-                ? 'bg-linear-to-r from-violet-600/25 to-fuchsia-600/10 border border-violet-400/20'
+           p-2.5 rounded-xl cursor-pointer max-sm:text-sm transition-colors ${selectedUser?._id === user._id
+                ? 'bg-gradient-to-r from-violet-600/25 to-fuchsia-600/10 border border-violet-400/20'
                 : 'border border-transparent hover:bg-white/5'}`}>
             <div className='relative shrink-0'>
               <img src={user?.profilePic || assets.avatar_icon} alt=""
@@ -92,7 +92,7 @@ const Sidebar = () => {
               }
             </div>
             {unseenMessages[user._id] > 0 && <p className='absolute top-1/2 -translate-y-1/2 right-3 text-[11px] font-medium h-5 min-w-5 px-1 flex justify-center
-        items-center rounded-full bg-linear-to-br from-violet-500 to-fuchsia-500 shadow-md shadow-violet-900/40'>{unseenMessages[user._id]}</p>}
+        items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-md shadow-violet-900/40'>{unseenMessages[user._id]}</p>}
           </motion.div>
         ))}
       </div>

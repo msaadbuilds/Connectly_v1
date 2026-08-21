@@ -5,7 +5,7 @@ import { AuthContext } from '../../context/Authcontext'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const RightSidebar = () => {
-  const { selectedUser, messages } = useContext(ChatContext)
+  const { selectedUser, messages, showUserInfo, setShowUserInfo } = useContext(ChatContext)
   const { logout, onlineUsers } = useContext(AuthContext)
   const [msgImages, setMsgImages] = useState([])
   const [msgVideos, setMsgVideos] = useState([])
@@ -28,15 +28,14 @@ const RightSidebar = () => {
 
   return (
     <AnimatePresence>
-      {selectedUser && (
+      {selectedUser && showUserInfo && (
         <motion.div
           key={selectedUser._id}
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 24 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className={`bg-[#8185B2]/8 border-l border-white/5 text-white w-full relative overflow-y-scroll overflow-x-hidden ${selectedUser ?
-            "max-md:hidden" : ""}`}
+          className='bg-[#8185B2]/8 border-l border-white/5 text-white w-full relative overflow-y-scroll overflow-x-hidden max-md:hidden'
         >
           {/* ambient glow to match the animated theme instead of feeling empty */}
           <motion.div
@@ -49,6 +48,15 @@ const RightSidebar = () => {
             animate={{ scale: [1, 1.1, 1], opacity: [0.35, 0.6, 0.35] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
           />
+
+          <button
+            onClick={() => setShowUserInfo(false)}
+            className='absolute top-3 right-3 z-10 h-8 w-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors cursor-pointer'
+          >
+            <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' strokeWidth='2.2' viewBox='0 0 24 24'>
+              <path strokeLinecap='round' strokeLinejoin='round' d='M6 18L18 6M6 6l12 12' />
+            </svg>
+          </button>
 
           <div className='relative pt-16 flex flex-col items-center gap-2 text-xs font-light mx-auto'>
             <img src={selectedUser?.profilePic || assets.avatar_icon} className='w-25 h-25 aspect-square rounded-full

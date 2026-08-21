@@ -48,10 +48,28 @@ export const getMessages = async (req, res) => {
         { senderId: selectedUserId, recieverId: myId },
       ],
     });
-    await Message.updateMany(
-      { senderId: selectedUserId, recieverId: myId },
-      { seen: true }
-    );
+
+    const toMark = await Message.find({
+      senderId: selectedUserId,
+      recieverId: myId,
+      $or: [{ seen: false }, { delivered: false }],
+    });
+
+    if (toMark.length > 0) {
+      await Message.updateMany(
+        { senderId: selectedUserId, recieverId: myId },
+        { seen: true, delivered: true }
+      );
+
+      const senderSocketId = userSocketMap[selectedUserId];
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("messagesSeen", {
+          by: myId,
+          messageIds: toMark.map((m) => m._id.toString()),
+        });
+      }
+    }
+
     res.json({
       success: true,
       messages,
@@ -67,7 +85,21 @@ export const getMessages = async (req, res) => {
 export const markSeenMessage = async (req, res) => {
   try {
     const { id } = req.params;
-    await Message.findByIdAndUpdate(id, { seen: true });
+    const message = await Message.findByIdAndUpdate(
+      id,
+      { seen: true, delivered: true },
+      { new: true }
+    );
+
+    if (message) {
+      const senderSocketId = userSocketMap[message.senderId.toString()];
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("messagesSeen", {
+          by: message.recieverId.toString(),
+          messageIds: [message._id.toString()],
+        });
+      }
+    }
 
     res.json({
       success: true,
@@ -86,14 +118,16 @@ export const sendMessage = async (req, res) => {
     const recieverId = req.params.id;
     const senderId = req.user._id;
 
+    const recieverSocketId = userSocketMap[recieverId];
+
     const newMessage = await Message.create({
       senderId,
       recieverId,
       text,
-      messageType
+      messageType,
+      delivered: !!recieverSocketId
     });
 
-    const recieverSocketId = userSocketMap[recieverId];
     if(recieverSocketId) {
         io.to(recieverSocketId).emit("newMessage", newMessage)
     }
@@ -123,14 +157,16 @@ export const sendVideoMessage = async (req, res) => {
       });
     }
 
+    const recieverSocketId = userSocketMap[recieverId];
+
     const newMessage = await Message.create({
       senderId,
       recieverId,
       video: req.file.path,
-      messageType: 'video'
+      messageType: 'video',
+      delivered: !!recieverSocketId
     });
 
-    const recieverSocketId = userSocketMap[recieverId];
     if(recieverSocketId) {
         io.to(recieverSocketId).emit("newMessage", newMessage)
     }
@@ -160,14 +196,16 @@ export const sendImageMessage = async (req, res) => {
       });
     }
 
+    const recieverSocketId = userSocketMap[recieverId];
+
     const newMessage = await Message.create({
       senderId,
       recieverId,
       image: req.file.path,
-      messageType: 'image'
+      messageType: 'image',
+      delivered: !!recieverSocketId
     });
 
-    const recieverSocketId = userSocketMap[recieverId];
     if(recieverSocketId) {
         io.to(recieverSocketId).emit("newMessage", newMessage)
     }
