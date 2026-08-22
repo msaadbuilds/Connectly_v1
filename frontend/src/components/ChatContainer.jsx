@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import assets from '../assets/assets'
-import { formatMessageTime } from '../../lib/utils'
+import { formatMessageTime, getDateLabel, getDateKey, formatFileSize } from '../../lib/utils'
 import { ChatContext } from '../../context/Chatcontext'
 import { AuthContext } from '../../context/Authcontext'
 import imageCompression from "browser-image-compression";
 import toast from "react-hot-toast";
 import { LogoMark } from './Logo'
 import { motion, AnimatePresence } from 'framer-motion'
+import EmojiPicker from './EmojiPicker'
 
 // --- WhatsApp-style status icons (clock while sending, single/double tick, blue when seen) ---
 const ClockIcon = ({ className = '' }) => (
@@ -43,13 +44,62 @@ const DownloadIcon = ({ className = '' }) => (
   </svg>
 )
 
+// Page-with-folded-corner icon - used for both the "Document" attach option
+// and the generic file badge inside a document message bubble.
+const FileIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M14 3v5h5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8.5 13h7M8.5 16.5h7" strokeLinecap="round" />
+  </svg>
+)
+
+// Landscape-photo icon - used for the "Photos & videos" attach option.
+const MediaIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+    <rect x="3" y="4" width="18" height="16" rx="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="8.5" cy="9.5" r="1.6" />
+    <path d="M3 16l5-5 4 4 3-3 6 6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+const EmojiToggleIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8.5 10h.01M15.5 10h.01M8 14.5c1.2 1.2 2.5 1.8 4 1.8s2.8-.6 4-1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+// Extension -> badge color/label for the document bubble, matching the
+// app's violet/fuchsia theme with a few recognizable accent colors.
+const getFileMeta = (filename = '') => {
+  const ext = (filename.split('.').pop() || '').toUpperCase();
+  const map = {
+    PDF: { color: 'text-red-400 bg-red-500/15', label: 'PDF' },
+    DOC: { color: 'text-blue-400 bg-blue-500/15', label: 'DOC' },
+    DOCX: { color: 'text-blue-400 bg-blue-500/15', label: 'DOC' },
+    XLS: { color: 'text-emerald-400 bg-emerald-500/15', label: 'XLS' },
+    XLSX: { color: 'text-emerald-400 bg-emerald-500/15', label: 'XLS' },
+    PPT: { color: 'text-orange-400 bg-orange-500/15', label: 'PPT' },
+    PPTX: { color: 'text-orange-400 bg-orange-500/15', label: 'PPT' },
+    ZIP: { color: 'text-amber-400 bg-amber-500/15', label: 'ZIP' },
+    RAR: { color: 'text-amber-400 bg-amber-500/15', label: 'RAR' },
+    TXT: { color: 'text-slate-300 bg-slate-500/15', label: 'TXT' },
+    CSV: { color: 'text-emerald-400 bg-emerald-500/15', label: 'CSV' },
+  };
+  return map[ext] || { color: 'text-violet-300 bg-violet-500/15', label: ext || 'FILE' };
+};
+
 const ChatContainer = () => {
-  const { messages, selectedUser, setSelectedUser, sendMessage, sendVideoMessage, sendImageMessage, getMessages, isUploading, showUserInfo, setShowUserInfo } = useContext(ChatContext)
+  const { messages, selectedUser, setSelectedUser, sendMessage, sendVideoMessage, sendImageMessage, sendDocumentMessage, getMessages, isUploading, showUserInfo, setShowUserInfo } = useContext(ChatContext)
   const { authUser, onlineUsers } = useContext(AuthContext)
 
   const messagesContainerRef = useRef()
   const dropdownRef = useRef();
+  const emojiRef = useRef();
+  const inputRef = useRef();
   const [showUpload, setShowUpload] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const [input, setInput] = useState('')
 
   const handleDownload = async (url, filename) => {
@@ -115,6 +165,69 @@ const ChatContainer = () => {
     e.target.value = "";
   }
 
+  // "Photos & videos" is a single WhatsApp-style entry point that accepts
+  // either type and routes to the existing image/video handler - neither
+  // handler needs to change, they already read the file off this same event.
+  const handleSendMedia = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type.startsWith("image/")) {
+      await handleSendImage(e);
+    } else if (file.type.startsWith("video/")) {
+      await handleSendVideo(e);
+    } else {
+      toast.error("Select a photo or video file");
+      setShowUpload(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleSendDocument = async (e) => {
+    setShowUpload(false);
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Document size must be less than 25MB");
+      e.target.value = "";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("document", file);
+    await sendDocumentMessage(formData);
+    e.target.value = "";
+  };
+
+  const toggleUpload = () => {
+    setShowEmoji(false);
+    setShowUpload((prev) => !prev);
+  };
+
+  const toggleEmoji = () => {
+    setShowUpload(false);
+    setShowEmoji((prev) => !prev);
+  };
+
+  // Inserts the picked emoji at the current caret position (not just the
+  // end), then restores focus + caret right after it - same as WhatsApp.
+  const handleEmojiSelect = (emoji) => {
+    const el = inputRef.current;
+    if (el && typeof el.selectionStart === 'number') {
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const next = input.slice(0, start) + emoji + input.slice(end);
+      setInput(next);
+      requestAnimationFrame(() => {
+        el.focus();
+        const pos = start + emoji.length;
+        el.setSelectionRange(pos, pos);
+      });
+    } else {
+      setInput((prev) => prev + emoji);
+    }
+  };
+
   useEffect(() => {
     if (selectedUser) {
       getMessages(selectedUser._id)
@@ -136,6 +249,9 @@ const ChatContainer = () => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowUpload(false);
+      }
+      if (emojiRef.current && !emojiRef.current.contains(event.target)) {
+        setShowEmoji(false);
       }
     };
 
@@ -162,7 +278,7 @@ const ChatContainer = () => {
             <source src={msg.video} type="video/ogg" />
           </video>
           {/* bottom gradient so time/ticks stay legible over any video frame */}
-          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-black/70 to-transparent pointer-events-none" />
           <button
             onClick={() => handleDownload(msg.video, `video-${msg._id || Date.now()}.mp4`)}
             className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm transition-colors"
@@ -186,7 +302,7 @@ const ChatContainer = () => {
             alt="Shared image"
           />
           {/* bottom gradient so time/ticks stay legible over any image */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-12 bg-linear-to-t from-black/70 to-transparent pointer-events-none" />
           <button
             onClick={() => handleDownload(msg.image, `image-${msg._id || Date.now()}.jpg`)}
             className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm transition-colors"
@@ -197,6 +313,38 @@ const ChatContainer = () => {
           <div className="absolute bottom-1.5 right-2.5 flex items-center gap-1 text-[11px] text-white/90">
             <span>{time}</span>
             {isMine && <MessageStatus msg={msg} light />}
+          </div>
+        </div>
+      );
+    } else if (msg.messageType === 'document' || msg.document) {
+      const meta = getFileMeta(msg.documentName);
+      return (
+        <div className={`w-64 sm:w-72 rounded-2xl p-3 shadow-md ${isMine
+            ? 'bg-linear-to-br from-violet-600 to-fuchsia-600 shadow-violet-900/30'
+            : 'bg-white/10 border border-white/10 backdrop-blur-sm shadow-black/20'}`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${meta.color}`}>
+              <FileIcon className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white truncate">{msg.documentName || 'Document'}</p>
+              <p className="text-[11px] text-white/60 mt-0.5">
+                {meta.label}{msg.documentSize ? ` · ${formatFileSize(msg.documentSize)}` : ''}
+              </p>
+            </div>
+            {!msg.pending && msg.document && (
+              <button
+                onClick={() => handleDownload(msg.document, msg.documentName || `document-${msg._id || Date.now()}`)}
+                className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/30 transition-colors"
+                title="Download document"
+              >
+                <DownloadIcon className="w-4 h-4 text-white" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-1 mt-1.5 text-[10.5px] text-white/70">
+            <span>{time}</span>
+            {isMine && <MessageStatus msg={msg} />}
           </div>
         </div>
       );
@@ -294,25 +442,37 @@ const ChatContainer = () => {
 
             {/* scrollable messages - bottom padding keeps last messages clear of the floating input bar */}
             <div ref={messagesContainerRef} className="relative h-full overflow-y-scroll px-3 pt-3 pb-24">
-              {messages.map((msg, index) => (
-                <motion.div
-                  key={msg._id || index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
-                  className={`flex items-end gap-2 mb-3 justify-end ${msg.senderId !== authUser._id && 'flex-row-reverse'}`}
-                >
-                  {renderMessage(msg)}
-                  <img
-                    src={
-                      msg.senderId === authUser._id
-                        ? authUser?.profilePic || assets.avatar_icon
-                        : selectedUser?.profilePic || assets.avatar_icon
-                    }
-                    className="w-7 h-7 object-cover rounded-full shrink-0 mb-0.5"
-                  />
-                </motion.div>
-              ))}
+              {messages.map((msg, index) => {
+                const prevMsg = messages[index - 1];
+                const showDateSeparator = !prevMsg || getDateKey(msg.createdAt) !== getDateKey(prevMsg.createdAt);
+                return (
+                  <React.Fragment key={msg._id || index}>
+                    {showDateSeparator && (
+                      <div className="flex justify-center my-3">
+                        <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-[11px] font-medium text-white/70 shadow-sm">
+                          {getDateLabel(msg.createdAt)}
+                        </span>
+                      </div>
+                    )}
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                      className={`flex items-end gap-2 mb-3 justify-end ${msg.senderId !== authUser._id && 'flex-row-reverse'}`}
+                    >
+                      {renderMessage(msg)}
+                      <img
+                        src={
+                          msg.senderId === authUser._id
+                            ? authUser?.profilePic || assets.avatar_icon
+                            : selectedUser?.profilePic || assets.avatar_icon
+                        }
+                        className="w-7 h-7 object-cover rounded-full shrink-0 mb-0.5"
+                      />
+                    </motion.div>
+                  </React.Fragment>
+                );
+              })}
             </div>
 
             {/* input bar - sits over the same watermark layer, lifted with bottom padding so it doesn't hug the edge */}
@@ -321,7 +481,7 @@ const ChatContainer = () => {
 
                 <div className="relative shrink-0">
                   <button
-                    onClick={() => setShowUpload(prev => !prev)}
+                    onClick={toggleUpload}
                     className="text-white cursor-pointer p-2 hover:bg-white/10 rounded-full transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -336,31 +496,53 @@ const ChatContainer = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute bottom-13 left-0 flex gap-2 bg-[#241f3d]/95 backdrop-blur-xl px-3 py-2 rounded-2xl shadow-2xl shadow-black/40 border border-white/10"
+                        className="absolute bottom-13 left-0 w-56 bg-[#241f3d]/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden py-1.5"
                       >
-                        {/* Image Upload */}
-                        <label htmlFor="image" className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                            <path d="M15 8a1 1 0 100-2 1 1 0 000 2z" />
-                          </svg>
+                        {/* Document */}
+                        <label htmlFor="document" className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-white/10 transition-colors cursor-pointer">
+                          <span className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center bg-violet-500/20 text-violet-300">
+                            <FileIcon className="w-5 h-5" />
+                          </span>
+                          <span className="text-sm text-white">Document</span>
                         </label>
-                        <input onChange={handleSendImage} type="file" id="image" accept="image/*" hidden disabled={isUploading} />
+                        <input
+                          onChange={handleSendDocument}
+                          type="file"
+                          id="document"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar"
+                          hidden
+                          disabled={isUploading}
+                        />
 
-                        {/* Video Upload */}
-                        <label htmlFor="video" className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
+                        {/* Photos & videos */}
+                        <label htmlFor="media" className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-white/10 transition-colors cursor-pointer">
+                          <span className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center bg-sky-500/20 text-sky-300">
+                            <MediaIcon className="w-5 h-5" />
+                          </span>
+                          <span className="text-sm text-white">Photos & videos</span>
                         </label>
-                        <input onChange={handleSendVideo} type="file" id="video" accept="video/*" hidden disabled={isUploading} />
+                        <input onChange={handleSendMedia} type="file" id="media" accept="image/*,video/*" hidden disabled={isUploading} />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
+                {/* Emoji */}
+                <div className="relative shrink-0">
+                  <button
+                    onClick={toggleEmoji}
+                    className="text-white cursor-pointer p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <EmojiToggleIcon className="w-6 h-6" />
+                  </button>
+                  <AnimatePresence>
+                    {showEmoji && <EmojiPicker pickerRef={emojiRef} onSelect={handleEmojiSelect} />}
+                  </AnimatePresence>
+                </div>
+
                 {/* Input Field */}
                 <input
+                  ref={inputRef}
                   onChange={(e) => setInput(e.target.value)}
                   value={input}
                   onKeyDown={(e) => e.key === "Enter" ? handleSendMessage(e) : null}

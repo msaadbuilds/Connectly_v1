@@ -22,8 +22,22 @@ const storage = new CloudinaryStorage({
       eager_async: true, 
     }
   });
-  
+
+// Documents (pdf, docx, xlsx, zip, etc.) are not media, so they're uploaded
+// as Cloudinary "raw" resources instead of going through the image/video
+// pipeline above (no eager transforms, no format restriction).
+const documentStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: 'chat-documents',
+      resource_type: 'raw',
+      use_filename: true,
+      unique_filename: true,
+    }
+  });
+
 export {
   cloudinary,
-  storage
+  storage,
+  documentStorage
 }

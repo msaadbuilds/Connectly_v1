@@ -21,9 +21,18 @@ const messageSchema = new mongoose.Schema(
     video: {
         type: String,
     },
+    document: {
+        type: String,
+    },
+    documentName: {
+        type: String,
+    },
+    documentSize: {
+        type: Number,
+    },
     messageType: {
         type: String,
-        enum: ['text', 'image', 'video'],
+        enum: ['text', 'image', 'video', 'document'],
         default: 'text'
     },
     delivered: {

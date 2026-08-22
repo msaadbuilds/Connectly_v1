@@ -5,17 +5,24 @@ import {
   getMessages, 
   getUsersForSidebar, 
   markSeenMessage, 
+  sendDocumentMessage,
   sendImageMessage, 
   sendMessage, 
   sendVideoMessage 
 } from '../controllers/messageController.js';
-import { storage } from '../config/cloudinary.js';
+import { documentStorage, storage } from '../config/cloudinary.js';
 
 const messageRouter = express.Router();
 const upload = multer({
   storage,
   limits: {
       fileSize: 100 * 1024 * 1024
+  }
+});
+const uploadDocument = multer({
+  storage: documentStorage,
+  limits: {
+      fileSize: 25 * 1024 * 1024
   }
 });
 
@@ -25,5 +32,6 @@ messageRouter.put("/mark/:id", protectRoute, markSeenMessage);
 messageRouter.post("/send/:id", protectRoute, sendMessage);
 messageRouter.post("/send-image/:id", protectRoute, upload.single('image'), sendImageMessage);
 messageRouter.post("/send-video/:id", protectRoute, upload.single('video'), sendVideoMessage);
+messageRouter.post("/send-document/:id", protectRoute, uploadDocument.single('document'), sendDocumentMessage);
 
 export default messageRouter;

@@ -184,6 +184,47 @@ export const sendVideoMessage = async (req, res) => {
     });
   }
 };
+export const sendDocumentMessage = async (req, res) => {
+  try {
+    const recieverId = req.params.id;
+    const senderId = req.user._id;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Document file is required"
+      });
+    }
+
+    const recieverSocketId = userSocketMap[recieverId];
+
+    const newMessage = await Message.create({
+      senderId,
+      recieverId,
+      document: req.file.path,
+      documentName: req.file.originalname,
+      documentSize: req.file.size,
+      messageType: 'document',
+      delivered: !!recieverSocketId
+    });
+
+    if(recieverSocketId) {
+        io.to(recieverSocketId).emit("newMessage", newMessage)
+    }
+
+    res.json({
+      success: true,
+      newMessage,
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const sendImageMessage = async (req, res) => {
   try {
     const recieverId = req.params.id;

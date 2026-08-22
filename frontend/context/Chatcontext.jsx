@@ -190,6 +190,44 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
+  const sendDocumentMessage = async (documentData) => {
+    const file = documentData.get('document');
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage = {
+      _id: tempId,
+      senderId: authUser._id,
+      recieverId: selectedUser._id,
+      document: null,
+      documentName: file?.name,
+      documentSize: file?.size,
+      messageType: 'document',
+      createdAt: new Date().toISOString(),
+      pending: true,
+      delivered: false,
+      seen: false,
+    };
+    setMessages((prevMessages) => [...prevMessages, optimisticMessage]);
+    try {
+      setIsUploading(true);
+      const { data } = await axios.post(
+        `/api/messages/send-document/${selectedUser._id}`,
+        documentData,
+      );
+      if (data.success) {
+        resolveTempMessage(tempId, data.newMessage);
+        toast.success("Document sent successfully!");
+      } else {
+        toast.error(data.message);
+        setMessages((prevMessages) => prevMessages.filter((m) => m._id !== tempId));
+      }
+    } catch (error) {
+      toast.error("Failed to send document!");
+      setMessages((prevMessages) => prevMessages.filter((m) => m._id !== tempId));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const subscribeToMessages = async () => {
     if (!socket) return;
 
@@ -242,6 +280,7 @@ export const ChatProvider = ({ children }) => {
     sendMessage,
     sendImageMessage,
     sendVideoMessage,
+    sendDocumentMessage,
     setSelectedUser,
     unseenMessages,
     setUnseenMessages,
