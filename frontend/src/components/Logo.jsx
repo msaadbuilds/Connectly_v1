@@ -53,7 +53,7 @@ const Logo = ({ variant = 'full', size = 'md', stacked = false, withTagline = fa
       <div className={`flex ${stacked ? 'flex-col' : 'flex-row'} items-center ${s.gap}`}>
         <LogoMark size={s.icon} />
         <span
-          className={`${s.text} font-bold tracking-tight bg-gradient-to-r from-white via-violet-200 to-fuchsia-200 bg-clip-text text-transparent`}
+          className={`${s.text} font-bold tracking-tight bg-linear-to-r from-white via-violet-200 to-fuchsia-200 bg-clip-text text-transparent`}
         >
           Connectly
         </span>

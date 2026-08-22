@@ -352,9 +352,9 @@ const ChatContainer = () => {
       return (
         <div className={`relative max-w-[75vw] sm:max-w-70 md:max-w-xs px-3 py-2 rounded-2xl shadow-md
             ${isMine
-            ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white rounded-br-md shadow-violet-900/30'
+            ? 'bg-linear-to-br from-violet-600 to-fuchsia-600 text-white rounded-br-md shadow-violet-900/30'
             : 'bg-white/10 border border-white/10 backdrop-blur-sm text-white rounded-bl-md shadow-black/20'}`}>
-          <p className="md:text-sm font-light whitespace-pre-wrap [overflow-wrap:anywhere] leading-relaxed">
+          <p className="md:text-sm font-light whitespace-pre-wrap wrap-anywhere leading-relaxed">
             {msg.text}
             {/* invisible spacer, exact same size as the real time/ticks below,
                 so the last line of text always wraps around it correctly -
@@ -433,7 +433,7 @@ const ChatContainer = () => {
 
             {isUploading && (
               <div className="absolute top-5 left-1/2 transform -translate-x-1/2 z-50">
-                <div className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 rounded-full shadow-lg shadow-violet-900/40">
+                <div className="flex items-center gap-2 bg-linear-to-r from-violet-600 to-fuchsia-600 px-4 py-2 rounded-full shadow-lg shadow-violet-900/40">
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                   <span className="text-white text-md">Sending...</span>
                 </div>
@@ -476,7 +476,7 @@ const ChatContainer = () => {
             </div>
 
             {/* input bar - sits over the same watermark layer, lifted with bottom padding so it doesn't hug the edge */}
-            <div className="absolute bottom-0 left-0 right-0 px-3 pb-4 pt-6 bg-gradient-to-t from-[#0b0917]/70 via-[#0b0917]/30 to-transparent">
+            <div className="absolute bottom-0 left-0 right-0 px-3 pb-4 pt-6 bg-linear-to-t from-[#0b0917]/70 via-[#0b0917]/30 to-transparent">
               <div className="flex items-center rounded-full px-1.5 py-1.5 bg-white/8 backdrop-blur-md shadow-lg w-full border border-white/10 focus-within:border-violet-400/50 transition-colors">
 
                 <div className="relative shrink-0">

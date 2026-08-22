@@ -74,7 +74,7 @@ const Sidebar = () => {
             whileTap={{ scale: 0.98 }}
             className={`relative flex items-center gap-3
            p-2.5 rounded-xl cursor-pointer max-sm:text-sm transition-colors ${selectedUser?._id === user._id
-                ? 'bg-gradient-to-r from-violet-600/25 to-fuchsia-600/10 border border-violet-400/20'
+                ? 'bg-linear-to-r from-violet-600/25 to-fuchsia-600/10 border border-violet-400/20'
                 : 'border border-transparent hover:bg-white/5'}`}>
             <div className='relative shrink-0'>
               <img src={user?.profilePic || assets.avatar_icon} alt=""
@@ -92,7 +92,7 @@ const Sidebar = () => {
               }
             </div>
             {unseenMessages[user._id] > 0 && <p className='absolute top-1/2 -translate-y-1/2 right-3 text-[11px] font-medium h-5 min-w-5 px-1 flex justify-center
-        items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-md shadow-violet-900/40'>{unseenMessages[user._id]}</p>}
+        items-center rounded-full bg-linear-to-br from-violet-500 to-fuchsia-500 shadow-md shadow-violet-900/40'>{unseenMessages[user._id]}</p>}
           </motion.div>
         ))}
       </div>

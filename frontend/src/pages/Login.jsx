@@ -56,7 +56,7 @@ const Login = () => {
           />
         </div>
 
-        <button type='submit' className='py-2.5 mt-2 text-xl font-medium bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500
+        <button type='submit' className='py-2.5 mt-2 text-xl font-medium bg-linear-to-r from-indigo-500 via-violet-500 to-fuchsia-500
         rounded-xl cursor-pointer hover:brightness-110 active:scale-[0.99] transition shadow-lg shadow-violet-900/30' >
           Login
         </button>

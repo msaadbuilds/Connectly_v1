@@ -329,7 +329,7 @@ const EmojiPicker = ({ onSelect, pickerRef }) => {
               {isActive && (
                 <motion.div
                   layoutId="emoji-tab-underline"
-                  className="absolute left-1 right-1 -bottom-0.5 h-0.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                  className="absolute left-1 right-1 -bottom-0.5 h-0.5 rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500"
                 />
               )}
             </button>
@@ -382,7 +382,7 @@ const EmojiPicker = ({ onSelect, pickerRef }) => {
 
       {/* Bottom bar - visual parity with WhatsApp's picker (GIF/stickers not wired up) */}
       <div className="flex items-center justify-center gap-2 px-3 py-2 border-t border-white/10 shrink-0">
-        <div className="p-1.5 rounded-full bg-gradient-to-br from-violet-600/30 to-fuchsia-600/30 text-fuchsia-300">
+        <div className="p-1.5 rounded-full bg-linear-to-br from-violet-600/30 to-fuchsia-600/30 text-fuchsia-300">
           <SmileyIcon className="w-4.5 h-4.5" />
         </div>
         <div title="Coming soon" className="px-3 py-1 rounded-full text-xs font-medium text-white/30 border border-white/10 cursor-not-allowed select-none">
